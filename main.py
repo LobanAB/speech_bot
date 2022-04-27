@@ -6,7 +6,6 @@ from google.cloud import dialogflow
 from telegram import Update, ForceReply
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
-
 # Enable logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
@@ -18,6 +17,7 @@ load_dotenv()
 GOOGLE_PROJECT_ID = os.environ['GOOGLE_PROJECT_ID']
 GOOGLE_SESSION_ID = os.environ['GOOGLE_SESSION_ID']
 GOOGLE_APPLICATION_CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
+
 
 # Define a few command handlers. These usually take the two arguments update and
 # context.
@@ -59,18 +59,19 @@ def detect_intent_texts(text, language_code):
     response = session_client.detect_intent(
         request={"session": session, "query_input": query_input}
     )
-    #print(response)
-    #print(response.query_result.query_text)
-        # print("=" * 20)
-        # print("Query text: {}".format(response.query_result.query_text))
-        # print(
-        #     "Detected intent: {} (confidence: {})\n".format(
-        #         response.query_result.intent.display_name,
-        #         response.query_result.intent_detection_confidence,
-        #     )
-        # )
-    #print("Fulfillment text: {}\n".format(response.query_result.fulfillment_text))
+    # print(response)
+    # print(response.query_result.query_text)
+    # print("=" * 20)
+    # print("Query text: {}".format(response.query_result.query_text))
+    # print(
+    #     "Detected intent: {} (confidence: {})\n".format(
+    #         response.query_result.intent.display_name,
+    #         response.query_result.intent_detection_confidence,
+    #     )
+    # )
+    # print("Fulfillment text: {}\n".format(response.query_result.fulfillment_text))
     return response.query_result.fulfillment_text
+
 
 def main() -> None:
     """Start the bot."""

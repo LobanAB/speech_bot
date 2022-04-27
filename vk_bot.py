@@ -2,8 +2,15 @@ import os
 import random
 
 from dotenv import load_dotenv
+from google.cloud import dialogflow
 import vk_api as vk
 from vk_api.longpoll import VkLongPoll, VkEventType
+
+
+load_dotenv()
+GOOGLE_PROJECT_ID = os.environ['GOOGLE_PROJECT_ID']
+GOOGLE_SESSION_ID = os.environ['GOOGLE_SESSION_ID']
+GOOGLE_APPLICATION_CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 
 
 def echo(event, vk_api):
@@ -14,6 +21,27 @@ def echo(event, vk_api):
     )
 
 
+def detect_intent_texts(text, language_code):
+    """Returns the result of detect intent with texts as inputs.
+
+    Using the same `session_id` between requests allows continuation
+    of the conversation."""
+    print('Входящий', text)
+    session_client = dialogflow.SessionsClient()
+
+    session = session_client.session_path(GOOGLE_PROJECT_ID, GOOGLE_SESSION_ID)
+    print("Session path: {}\n".format(session))
+
+    text_input = dialogflow.TextInput(text=text, language_code=language_code)
+
+    query_input = dialogflow.QueryInput(text=text_input)
+
+    response = session_client.detect_intent(
+        request={"session": session, "query_input": query_input}
+    )
+    return response.query_result.fulfillment_text
+
+
 def main():
     load_dotenv()
     vk_api_key = os.environ['VK_API_KEY']
@@ -22,6 +50,7 @@ def main():
     longpoll = VkLongPoll(vk_session)
     for event in longpoll.listen():
         if event.type == VkEventType.MESSAGE_NEW and event.to_me:
+            event.text = detect_intent_texts(event.text, "ru-ru")
             echo(event, vk_api)
 
 
