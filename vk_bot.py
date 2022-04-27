@@ -1,3 +1,4 @@
+import logging
 import os
 import random
 
@@ -6,6 +7,7 @@ from google.cloud import dialogflow
 import vk_api as vk
 from vk_api.longpoll import VkLongPoll, VkEventType
 
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 GOOGLE_PROJECT_ID = os.environ['GOOGLE_PROJECT_ID']
