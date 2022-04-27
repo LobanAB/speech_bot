@@ -39,7 +39,8 @@ def detect_intent_texts(text, language_code):
     response = session_client.detect_intent(
         request={"session": session, "query_input": query_input}
     )
-    return response.query_result.fulfillment_text
+    if not response.query_result.intent.is_fallback:
+        return response.query_result.fulfillment_text
 
 
 def main():
@@ -51,7 +52,8 @@ def main():
     for event in longpoll.listen():
         if event.type == VkEventType.MESSAGE_NEW and event.to_me:
             event.text = detect_intent_texts(event.text, "ru-ru")
-            echo(event, vk_api)
+            if event.text:
+                echo(event, vk_api)
 
 
 if __name__ == '__main__':
