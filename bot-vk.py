@@ -4,6 +4,7 @@ import random
 
 from dotenv import load_dotenv
 from google.cloud import dialogflow
+import telegram
 import vk_api as vk
 from vk_api.longpoll import VkLongPoll, VkEventType
 
@@ -18,6 +19,18 @@ load_dotenv()
 GOOGLE_PROJECT_ID = os.environ['GOOGLE_PROJECT_ID']
 GOOGLE_SESSION_ID = os.environ['GOOGLE_SESSION_ID']
 GOOGLE_APPLICATION_CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
+
+
+class TelegramLogsHandler(logging.Handler):
+
+    def __init__(self, chat_id, tg_api_token):
+        super().__init__()
+        self.chat_id = chat_id
+        self.tg_bot = telegram.Bot(token=tg_api_token)
+
+    def emit(self, record):
+        log_entry = self.format(record)
+        self.tg_bot.send_message(chat_id=self.chat_id, text=log_entry)
 
 
 def send_message(event, google_answer, vk_api):
@@ -53,6 +66,12 @@ def detect_intent_texts(text, language_code):
 def main():
     load_dotenv()
     vk_api_key = os.environ['VK_API_KEY']
+    chat_id = os.environ['TG_CHAT_ID']
+    tg_api_token = os.environ['TG_API_TOKEN']
+    logger.setLevel(logging.WARNING)
+    handler = TelegramLogsHandler(chat_id, tg_api_token)
+    logger.addHandler(handler)
+    bat = handler.tg_bot
     vk_session = vk.VkApi(token=vk_api_key)
     vk_api = vk_session.get_api()
     longpoll = VkLongPoll(vk_session)
