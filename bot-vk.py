@@ -20,10 +20,10 @@ GOOGLE_SESSION_ID = os.environ['GOOGLE_SESSION_ID']
 GOOGLE_APPLICATION_CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 
 
-def echo(event, vk_api):
+def send_message(event, google_answer, vk_api):
     vk_api.messages.send(
         user_id=event.user_id,
-        message=event.text,
+        message=google_answer,
         random_id=random.randint(1, 1000)
     )
 
@@ -33,11 +33,11 @@ def detect_intent_texts(text, language_code):
 
     Using the same `session_id` between requests allows continuation
     of the conversation."""
-    print('Входящий', text)
+    #print('Входящий', text)
     session_client = dialogflow.SessionsClient()
 
     session = session_client.session_path(GOOGLE_PROJECT_ID, GOOGLE_SESSION_ID)
-    print("Session path: {}\n".format(session))
+    #print("Session path: {}\n".format(session))
 
     text_input = dialogflow.TextInput(text=text, language_code=language_code)
 
@@ -58,9 +58,9 @@ def main():
     longpoll = VkLongPoll(vk_session)
     for event in longpoll.listen():
         if event.type == VkEventType.MESSAGE_NEW and event.to_me:
-            event.text = detect_intent_texts(event.text, "ru-ru")
-            if event.text:
-                echo(event, vk_api)
+            google_answer = detect_intent_texts(event.text, "ru-ru")
+            if google_answer:
+                send_message(event, google_answer, vk_api)
 
 
 if __name__ == '__main__':

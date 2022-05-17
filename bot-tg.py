@@ -35,7 +35,7 @@ def help_command(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Help!')
 
 
-def echo(update: Update, context: CallbackContext) -> None:
+def send_message(update: Update, context: CallbackContext) -> None:
     """Echo the user message."""
     message = detect_intent_texts(update.message.text, "ru-ru")
     update.message.reply_text(message)
@@ -46,11 +46,11 @@ def detect_intent_texts(text, language_code):
 
     Using the same `session_id` between requests allows continuation
     of the conversation."""
-    print('Входящий', text)
+    #print('Входящий', text)
     session_client = dialogflow.SessionsClient()
 
     session = session_client.session_path(GOOGLE_PROJECT_ID, GOOGLE_SESSION_ID)
-    print("Session path: {}\n".format(session))
+    #print("Session path: {}\n".format(session))
 
     text_input = dialogflow.TextInput(text=text, language_code=language_code)
 
@@ -90,7 +90,7 @@ def main() -> None:
     dispatcher.add_handler(CommandHandler("help", help_command))
 
     # on non command i.e message - echo the message on Telegram
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, send_message))
 
     # Start the Bot
     updater.start_polling()
