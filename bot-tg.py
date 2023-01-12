@@ -3,11 +3,9 @@ import os
 
 from dotenv import load_dotenv
 from google.cloud import dialogflow
-import telegram
 from telegram import Update, ForceReply
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
-# Enable logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
 )
@@ -22,18 +20,16 @@ GOOGLE_APPLICATION_CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 
 class TelegramLogsHandler(logging.Handler):
 
-    def __init__(self, chat_id, tg_api_token):
+    def __init__(self, chat_id, tg_bot):
         super().__init__()
         self.chat_id = chat_id
-        self.tg_bot = telegram.Bot(token=tg_api_token)
+        self.tg_bot = tg_bot
 
     def emit(self, record):
         log_entry = self.format(record)
         self.tg_bot.send_message(chat_id=self.chat_id, text=log_entry)
 
 
-# Define a few command handlers. These usually take the two arguments update and
-# context.
 def start(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /start is issued."""
     user = update.effective_user
@@ -56,64 +52,40 @@ def send_message(update: Update, context: CallbackContext) -> None:
 
 def detect_intent_texts(text, language_code):
     """Returns the result of detect intent with texts as inputs.
-
     Using the same `session_id` between requests allows continuation
     of the conversation."""
-    #print('Входящий', text)
     session_client = dialogflow.SessionsClient()
-
     session = session_client.session_path(GOOGLE_PROJECT_ID, GOOGLE_SESSION_ID)
-    #print("Session path: {}\n".format(session))
-
     text_input = dialogflow.TextInput(text=text, language_code=language_code)
-
     query_input = dialogflow.QueryInput(text=text_input)
-
     response = session_client.detect_intent(
         request={"session": session, "query_input": query_input}
     )
-    # print(response)
-    # print(response.query_result.query_text)
-    # print("=" * 20)
-    # print("Query text: {}".format(response.query_result.query_text))
-    # print(
-    #     "Detected intent: {} (confidence: {})\n".format(
-    #         response.query_result.intent.display_name,
-    #         response.query_result.intent_detection_confidence,
-    #     )
-    # )
-    # print("Fulfillment text: {}\n".format(response.query_result.fulfillment_text))
     return response.query_result.fulfillment_text
+
+
+def err(update: object, context: CallbackContext):
+    logger.warning(context.error)
 
 
 def main() -> None:
     """Start the bot."""
-    # Create the Updater and pass it your bot's token.
     load_dotenv()
     chat_id = os.environ['TG_CHAT_ID']
     tg_api_token = os.environ['TG_API_TOKEN']
     logger.setLevel(logging.WARNING)
-    handler = TelegramLogsHandler(chat_id, tg_api_token)
-    logger.addHandler(handler)
-    bot = handler.tg_bot
     updater = Updater(tg_api_token)
-
-    # Get the dispatcher to register handlers
     dispatcher = updater.dispatcher
-
-    # on different commands - answer in Telegram
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CommandHandler("help", help_command))
-
-    # on non command i.e message - echo the message on Telegram
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, send_message))
-
-    # Start the Bot
-    updater.start_polling()
-
-    # Run the bot until you press Ctrl-C or the process receives SIGINT,
-    # SIGTERM or SIGABRT. This should be used most of the time, since
-    # start_polling() is non-blocking and will stop the bot gracefully.
+    dispatcher.add_error_handler(err, run_async=True)
+    handler = TelegramLogsHandler(chat_id, updater.bot)
+    logger.addHandler(handler)
+    try:
+        updater.start_polling()
+    except:
+        logger.exception('Бот упал с ошибкой:')
     updater.idle()
 
 
